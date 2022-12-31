@@ -8,6 +8,8 @@ Term Project for the Course "Machine Learning and the Application in Chemistry"
 - xgboost
 
 ## baseline
+这一部分结果由predict.py脚本给出，直接运行即可。
+
 LinearRegression
 
 MAE: 28.558 RMSE: 37.4457 R2: 0.1199
@@ -39,6 +41,8 @@ MAE: 29.6304 RMSE: 38.5925 R2: 0.0612
 *currently there is no hyperparameter tuning here*
 
 ## results by NN
+这一部分结果由NN.py给出，参数已经调整，直接运行脚本即可。
+
 R2 score: 0.3141, RMSE: 32.52, MAE: 24.77
 
 ## best params

@@ -7,10 +7,11 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 
 
+# Add weight to data
 def add_features():
     data = pd.read_csv('data/trainval.csv')
     data['weighted_A1'] = 80 * data['A1']
@@ -58,6 +59,7 @@ def add_features():
     return X, y, y_var, data
 
 
+# Get data of baseline methods
 def train_and_validate(X, y, y_var, data):
     kf = KFold(n_splits=5, shuffle=True, random_state=0)
     MAE, RMSE, R2 = [], [], []

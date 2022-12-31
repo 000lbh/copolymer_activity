@@ -4,11 +4,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 
-def load_data(): # 简单设计了一下feature，重点在引入了weighted
+# load_data: simple implementation of features, introduced weighted
+def load_data():
     data = pd.read_csv('data/trainval.csv')
     data['weighted_A1'] = 80 * data['A1']
     data['weighted_A2'] = 113.3 * data['A2']
@@ -24,7 +25,8 @@ def load_data(): # 简单设计了一下feature，重点在引入了weighted
     y_var = data['Activity_var'].values
     return X, y, y_var, data
 
-def gen_data(): # 产生随机序列，用于CNN采样
+# gen_data: generate random serials for CNN sampling (for tuning)
+def gen_data():
     data = pd.read_csv('data/trainval.csv')
     random = np.random.random(size=(data.shape[0], 64, 64))
     for r, x1, x2, x3 in zip(random, data['A1'], data['A2'], data['A3']):
@@ -32,12 +34,12 @@ def gen_data(): # 产生随机序列，用于CNN采样
         r[(r>x1+x2) & (r<=x1+x2+x3)] = 54.7
         r[(r>x1) & (r<=x1+x2)] = 113.3
         r[r<=x1] = 80
-    # print(random)
     return random, data
 
 
 
-class CNN(nn.Module): # CNN模型，有2D和1D两种，目前只用了2D，可以都用（但效果也不会变好）
+# CNN model: 2D and 1D, only 2D is in use, can use both (no better effect)
+class CNN(nn.Module):
     def __init__(self, hidden_size=1024):
         super(CNN, self).__init__()
         self.conv2d_1 = nn.Conv2d(1, 16, 3, padding=1)
@@ -68,10 +70,11 @@ class CNN(nn.Module): # CNN模型，有2D和1D两种，目前只用了2D，可�
         X_1d = F.relu(self.fc2(X_1d.reshape(-1, 32*64*16)))'''
         X = X_2d#torch.cat((X_2d, X_1d), dim=1)
         X = torch.tanh(self.fc3(X))
-        # X = self.fc4(X)
         return X
 
-class NN(nn.Module): # 用来拟合的神经网络
+# Class NN:
+# Used to fit neural network
+class NN(nn.Module):
     def __init__(self, input_size, hidden_size=512, activation1='tanh', activation2='tanh', dropout=0.2):
         super(NN, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size//2)
@@ -82,7 +85,7 @@ class NN(nn.Module): # 用来拟合的神经网络
         self.dropout = nn.Dropout(dropout)
         self.CNN_model = CNN()
     def forward(self, X, random):
-        # feat = self.CNN_model(random) # 这里指望它能提取一些特征，但效果不好
+        # feat = self.CNN_model(random) # Hope that it can extract some features, but failed
         X = self.activate1(self.fc1(X))
         X = self.dropout(X)
         X = self.activate2(self.fc2(X))
@@ -91,6 +94,7 @@ class NN(nn.Module): # 用来拟合的神经网络
         X = self.fc3(X)
         return X
 
+# Train the neural network with given data
 def train(model, X_train, y_train, X_val, y_val, y_true, y_ref, random_X_train, random_X_val, patience=100, epochs=1000, lr=0.0003, opt='Adam', weight_decay=1e-5, verbose=True, tuning=False):
     if opt == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -137,6 +141,7 @@ def train(model, X_train, y_train, X_val, y_val, y_true, y_ref, random_X_train, 
             print(f'R2 score: {r2_score(y_true, y_pred+y_ref)}, RMSE: {np.sqrt(mean_squared_error(y_true, y_pred+y_ref))}, MAE: {mean_absolute_error(y_true, y_pred+y_ref)}')
     return best_R2, best_MAE, best_RMSE, best_epoch
 
+# Deprecated version of train
 def train_orig(model, X_train, y_train, X_val, y_val, y_true, y_ref, epochs=100, lr=0.0003):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = nn.MSELoss()
@@ -161,6 +166,7 @@ def train_orig(model, X_train, y_train, X_val, y_val, y_true, y_ref, epochs=100,
             print(f'R2 score: {r2_score(y_true, y_pred)}, RMSE: {np.sqrt(mean_squared_error(y_true, y_pred))}, MAE: {mean_absolute_error(y_true, y_pred)}')
     return loss_train, loss_val
 
+# Unused
 def train_CNN(model, X_train, y_train, X_val, y_val, y_true, y_ref, epochs=100, lr=0.0003):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = nn.MSELoss()
@@ -186,7 +192,7 @@ def train_CNN(model, X_train, y_train, X_val, y_val, y_true, y_ref, epochs=100, 
     return loss_train, loss_val
 
 def main():
-    X, y, y_var, data = load_data() # variance对应的是activity - weight*x的结果
+    X, y, y_var, data = load_data() # variance is related to the result of activity - weight*x
     random, _ = gen_data()
     X_train, X_val, y_train, y_val = train_test_split(X, y_var, test_size=0.2, random_state=42)
     random_X_train, random_X_val = train_test_split(random, test_size=0.2, random_state=42)
@@ -205,11 +211,12 @@ def main():
     print(f'Best R2 score: {best_R2}, Best RMSE: {best_RMSE}, Best MAE: {best_MAE}, Best epoch: {best_epoch}')
     # loss_train, loss_val = train_orig(model, X_train, y_true_train, X_val, y_val, y_true, y_ref, epochs=1000)
 
+# For tuning parameters to get best performance
 def tuning():
     import optuna
     from optuna.samplers import TPESampler
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    X, y, y_var, data = load_data() # variance对应的是activity - weight*x的结果
+    X, y, y_var, data = load_data() # variance is related to the result of activity - weight*x
     random, _ = gen_data()
     X_train, X_val, y_train, y_val = train_test_split(X, y_var, test_size=0.2, random_state=42)
     random_X_train, random_X_val = train_test_split(random, test_size=0.2, random_state=42)
@@ -248,7 +255,4 @@ def tuning():
     return study.best_params
 
 if __name__ == '__main__':
-    # best_params = tuning()
-    # print(best_params)
     main()
-    # gen_data()

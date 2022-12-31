@@ -7,9 +7,9 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import KFold
 
+# Merged to predict.py
 def base_predict():
     data = pd.read_csv('data/trainval.csv')
     data["A1A2"] = data["A1"] * data["A2"] / 0.25

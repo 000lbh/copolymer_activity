@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.colors
 import matplotlib.ticker
 
+# These two subroutines are used to visualize train data
 def visualize3D():
     data = pd.read_csv('data/trainval.csv')
     x = data['A1']
